@@ -90,7 +90,10 @@ def google_login():
     if current_user.is_authenticated:
         return redirect(url_for("main.home"))
     redirect_uri = url_for("auth.google_callback", _external=True)
-    return oauth.google.authorize_redirect(redirect_uri)
+    # Always show Google's account picker, even if the browser only has one
+    # session -- without this, Google can silently reuse the last-used
+    # account instead of letting the user choose/switch.
+    return oauth.google.authorize_redirect(redirect_uri, prompt="select_account")
 
 
 @auth_bp.route("/google/callback")

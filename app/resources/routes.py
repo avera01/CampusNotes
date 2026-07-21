@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 
 from app.extensions import db
-from app.models import Resource, Subject, University
+from app.models import Resource, Subject, Semester, University
 from app.resources.forms import UploadForm
 from app.resources.storage import save_resource_file, resource_file_location
 
@@ -28,10 +28,22 @@ def upload():
     form = UploadForm()
 
     if form.validate_on_submit():
-        subject = db.session.get(Subject, form.subject_id.data)
-        if subject is None:
-            flash("Please choose a valid subject from the dropdowns.", "error")
+        semester = db.session.get(Semester, form.semester_id.data)
+        if semester is None:
+            flash("Please choose a valid university/course/semester from the dropdowns.", "error")
         else:
+            subject_name = form.subject_name.data.strip()
+            # Case-insensitive match so "Data Structures" and "data structures"
+            # don't end up as two different subjects under the same semester.
+            subject = Subject.query.filter(
+                Subject.semester_id == semester.id,
+                db.func.lower(Subject.name) == subject_name.lower(),
+            ).first()
+            if subject is None:
+                subject = Subject(semester_id=semester.id, name=subject_name)
+                db.session.add(subject)
+                db.session.flush()  # assigns subject.id, needed below for the file path
+
             relative_path, size = save_resource_file(form.file.data, subject, current_app.config["UPLOAD_FOLDER"])
             original_filename = secure_filename(form.file.data.filename)
             ext = original_filename.rsplit(".", 1)[-1].lower() if "." in original_filename else ""

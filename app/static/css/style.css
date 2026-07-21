@@ -168,6 +168,28 @@ h2 { font-size: 1.2rem; }
 
 .field-error { color: var(--color-error); font-size: 0.85rem; margin: 0; }
 
+.password-field { position: relative; }
+.password-field input { padding-right: 40px; }
+.password-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: none;
+  border: none;
+  border-radius: var(--radius);
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.password-toggle:hover { color: var(--color-text); }
+.password-toggle .icon-eye-off { display: none; }
+.password-toggle.is-visible .icon-eye { display: none; }
+.password-toggle.is-visible .icon-eye-off { display: block; }
+
 .btn {
   display: inline-block;
   padding: 9px 16px;
@@ -382,7 +404,25 @@ textarea.input { resize: vertical; }
 }
 
 .pdf-preview { margin-top: 16px; }
-.pdf-preview iframe { width: 100%; height: 70vh; border: 1px solid var(--color-border); border-radius: var(--radius); }
+.pdf-preview iframe {
+  width: 100%;
+  height: 70vh;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  /* Without this, Chrome fills the iframe's not-yet-painted canvas with a
+     background derived from prefers-color-scheme -- black, when this
+     site's dark theme is active (or the OS is in dark mode and the site
+     is on "system"). Larger PDFs (this preview is embedding real, often
+     multi-MB files) take a moment for the built-in viewer to paint, so
+     users were seeing that black fill instead of the document -- looked
+     exactly like a broken preview even though the file itself was fine.
+     Forcing light here makes the viewer's own background/toolbar light
+     too, independent of the site's theme, which is what every PDF viewer
+     looks like anyway. */
+  color-scheme: light;
+  background: #fff;
+}
+.pdf-preview-fallback { margin-top: 8px; font-size: 0.85rem; }
 
 .search-bar { display: flex; gap: 8px; margin-bottom: 16px; }
 .search-bar .input { flex: 1; }

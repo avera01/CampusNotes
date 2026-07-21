@@ -49,16 +49,15 @@
       </div>
 
       <div class="field">
-        <label for="upload-semester">Semester</label>
-        <select id="upload-semester" class="input" disabled>
-          <option value="">-- select course first --</option>
-        </select>
+        {{ form.semester_id.label }}
+        {{ form.semester_id(class_="input", id="upload-semester", disabled=true) }}
+        {% for error in form.semester_id.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="field">
-        {{ form.subject_id.label }}
-        {{ form.subject_id(class_="input", id="upload-subject", disabled=true) }}
-        {% for error in form.subject_id.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        {{ form.subject_name.label }}
+        {{ form.subject_name(class_="input", id="upload-subject", placeholder="e.g. Data Structures") }}
+        {% for error in form.subject_name.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
       </div>
     </fieldset>
 
@@ -83,17 +82,16 @@
   initCascade([
     { select: document.getElementById("upload-university") },
     { select: document.getElementById("upload-course"), endpoint: "{{ url_for('main.api_courses') }}", param: "university_id", placeholder: "-- select course --" },
-    { select: document.getElementById("upload-semester"), endpoint: "{{ url_for('main.api_semesters') }}", param: "course_id", placeholder: "-- select semester --" },
-    { select: document.getElementById("upload-subject"), endpoint: "{{ url_for('main.api_subjects') }}", param: "semester_id", placeholder: "-- select subject --" }
+    { select: document.getElementById("upload-semester"), endpoint: "{{ url_for('main.api_semesters') }}", param: "course_id", placeholder: "-- select semester --" }
   ]);
 
-  // The subject select is a real form field -- keep its disabled state in
-  // sync with whether it has usable options so it submits correctly.
-  document.getElementById("upload-subject").addEventListener("change", function () {
+  // Semester is the last real cascade field -- keep its disabled state in
+  // sync with whether it has usable options so it actually submits.
+  document.getElementById("upload-semester").addEventListener("change", function () {
     this.disabled = !this.value;
   });
   document.querySelector("form").addEventListener("submit", function () {
-    document.getElementById("upload-subject").disabled = false;
+    document.getElementById("upload-semester").disabled = false;
   });
 </script>
 {% endblock %}

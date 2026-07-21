@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "macros.html" as macros %}
 {% block title %}Sign up · CampusNotes{% endblock %}
 
 {% block content %}
@@ -24,13 +25,13 @@
 
     <div class="field">
       {{ form.password.label }}
-      {{ form.password(class_="input") }}
+      {{ macros.password_field(form.password) }}
       {% for error in form.password.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
     </div>
 
     <div class="field">
       {{ form.confirm_password.label }}
-      {{ form.confirm_password(class_="input") }}
+      {{ macros.password_field(form.confirm_password) }}
       {% for error in form.confirm_password.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
     </div>
 
