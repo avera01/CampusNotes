@@ -11,9 +11,15 @@ class Config:
 
     # SQLite by default; point DATABASE_URL at a postgresql:// URI later
     # and no other code changes are needed (SQLAlchemy abstracts the dialect).
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
+    _database_url = os.environ.get(
         "DATABASE_URL", "sqlite:///" + os.path.join(basedir, "instance", "campusnotes.db")
     )
+    # Some hosts (Heroku historically, occasionally Render) hand out
+    # postgres:// URLs -- modern SQLAlchemy only accepts postgresql://
+    # and raises NoSuchModuleError on the old scheme, so normalize it.
+    if _database_url.startswith("postgres://"):
+        _database_url = _database_url.replace("postgres://", "postgresql://", 1)
+    SQLALCHEMY_DATABASE_URI = _database_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Local disk storage. Swap for an S3/Cloudinary-backed storage helper
