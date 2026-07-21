@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}My Account · CampusNotes{% endblock %}
+
+{% block content %}
+<h1>My account</h1>
+
+<div class="card account-card">
+  <p>
+    <strong>{{ current_user.name }}</strong>
+    <span class="badge {% if current_user.is_admin %}badge-verified{% else %}badge-premium{% endif %}">{{ current_user.role|capitalize }}</span>
+  </p>
+  <p class="muted">{{ current_user.email }}</p>
+  {% if current_user.university %}
+    <p class="muted">
+      {{ current_user.university.name }}
+      {% if current_user.course %} &middot; {{ current_user.course.name }}{% endif %}
+      {% if current_user.current_semester %} &middot; Semester {{ current_user.current_semester }}{% endif %}
+    </p>
+  {% endif %}
+  <div class="resource-actions">
+    <a class="btn btn-primary" href="{{ url_for('resources.upload') }}">Upload a resource</a>
+    <a class="btn" href="{{ url_for('auth.settings') }}">Settings</a>
+    {% if current_user.is_admin %}
+      <a class="btn" href="{{ url_for('admin.dashboard') }}">Admin dashboard</a>
+    {% endif %}
+    <a class="btn" href="{{ url_for('auth.logout') }}">Log out</a>
+  </div>
+</div>
+
+<h2>My uploads ({{ uploads|length }})</h2>
+{% if uploads %}
+  <ul class="card-list">
+    {% for r in uploads %}
+      <li class="card resource-row">
+        <div>
+          <a class="title-link" href="{{ url_for('resources.detail', resource_id=r.id) }}">{{ r.title }}</a>
+          {% if r.is_verified %}<span class="badge badge-verified">Verified</span>{% endif %}
+          {% if r.is_premium %}<span class="badge badge-premium">Premium</span>{% endif %}
+          <div class="resource-meta">
+            {{ r.subject.name }} &middot; {{ r.subject.semester.course.name }} Sem {{ r.subject.semester.number }} &middot;
+            {{ r.subject.semester.course.university.name }} &middot; {{ r.resource_type|capitalize }}
+          </div>
+        </div>
+        <div class="resource-stats">{{ r.download_count }} download{{ "s" if r.download_count != 1 else "" }}</div>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="muted">You haven't uploaded anything yet. <a href="{{ url_for('resources.upload') }}">Upload your first resource</a>.</p>
+{% endif %}
+{% endblock %}

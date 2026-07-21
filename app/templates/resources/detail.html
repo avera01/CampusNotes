@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ resource.title }} · CampusNotes{% endblock %}
+
+{% block content %}
+<article class="resource-detail">
+  <div class="resource-header">
+    <h1>{{ resource.title }}
+      {% if resource.is_verified %}<span class="badge badge-verified">Verified</span>{% endif %}
+      {% if resource.is_premium %}<span class="badge badge-premium">Premium</span>{% endif %}
+    </h1>
+    <p class="muted">
+      {{ resource.subject.name }} &middot;
+      {{ resource.subject.semester.course.name }} &middot;
+      Semester {{ resource.subject.semester.number }} &middot;
+      {{ resource.subject.semester.course.university.name }}
+    </p>
+    <p class="muted">
+      {{ resource.resource_type|capitalize }} &middot;
+      Uploaded by {{ resource.uploader.name }} &middot;
+      {{ resource.download_count }} download{{ "s" if resource.download_count != 1 else "" }}
+    </p>
+  </div>
+
+  {% if resource.description %}
+    <p>{{ resource.description }}</p>
+  {% endif %}
+
+  {% if resource.tags %}
+    <p class="tags">
+      {% for tag in resource.tags.split(",") %}
+        <span class="tag">{{ tag.strip() }}</span>
+      {% endfor %}
+    </p>
+  {% endif %}
+
+  {% if locked %}
+    <div class="premium-lock">
+      <p><strong>This resource is Premium.</strong></p>
+      <p class="muted">Payments aren't set up yet -- premium content isn't available for now.</p>
+    </div>
+  {% else %}
+    <div class="resource-actions">
+      <a class="btn btn-primary" href="{{ url_for('resources.download', resource_id=resource.id) }}">Download</a>
+      {% if resource.file_type == "pdf" %}
+        <a class="btn" href="{{ url_for('resources.preview', resource_id=resource.id) }}" target="_blank" rel="noopener">Preview</a>
+      {% endif %}
+    </div>
+
+    {% if resource.file_type == "pdf" %}
+      <div class="pdf-preview">
+        <iframe src="{{ url_for('resources.preview', resource_id=resource.id) }}" title="PDF preview"></iframe>
+      </div>
+    {% endif %}
+  {% endif %}
+</article>
+{% endblock %}

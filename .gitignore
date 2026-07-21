@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+instance/
+app/uploads/*
+!app/uploads/.gitkeep
+*.db
+.DS_Store
+.claude/settings.local.json

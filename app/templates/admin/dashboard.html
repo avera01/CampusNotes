@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Admin · CampusNotes{% endblock %}
+
+{% block content %}
+<h1>Admin dashboard</h1>
+
+<h2>Pending verification ({{ pending|length }})</h2>
+{% if pending %}
+  <ul class="card-list">
+    {% for r in pending %}
+      <li class="card resource-row">
+        <div>
+          <a class="title-link" href="{{ url_for('resources.detail', resource_id=r.id) }}">{{ r.title }}</a>
+          <div class="resource-meta">
+            {{ r.subject.name }} &middot; {{ r.subject.semester.course.name }} Sem {{ r.subject.semester.number }} &middot;
+            {{ r.subject.semester.course.university.name }} &middot; uploaded by {{ r.uploader.name }}
+          </div>
+        </div>
+        <form method="POST" action="{{ url_for('admin.verify_resource', resource_id=r.id) }}">
+          {{ form.hidden_tag() }}
+          <button type="submit" class="btn btn-primary">Verify</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="muted">Nothing waiting on verification.</p>
+{% endif %}
+
+<h2>Recently verified</h2>
+{% if verified %}
+  <ul class="card-list">
+    {% for r in verified %}
+      <li class="card resource-row">
+        <div>
+          <a class="title-link" href="{{ url_for('resources.detail', resource_id=r.id) }}">{{ r.title }}</a>
+          <div class="resource-meta">verified by {{ r.verified_by.name if r.verified_by else "-" }}</div>
+        </div>
+        <form method="POST" action="{{ url_for('admin.unverify_resource', resource_id=r.id) }}">
+          {{ form.hidden_tag() }}
+          <button type="submit" class="btn">Unverify</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="muted">No resources verified yet.</p>
+{% endif %}
+{% endblock %}

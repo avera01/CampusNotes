@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "campusnotes",
+      "runtimeExecutable": "F:\\CampusNotes\\.venv\\Scripts\\python.exe",
+      "runtimeArgs": ["run.py"],
+      "port": 5000
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}CampusNotes{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <h1>Find curriculum-specific study material</h1>
+  <p>Notes, previous year question papers, and syllabus documents shared by students at your university.</p>
+</div>
+
+{% set filters_active = selected.university_id or selected.course_id or selected.semester_id or selected.sort != "recent" %}
+
+<form method="GET" id="filter-form">
+  <details class="filters-toggle" {% if filters_active %}open{% endif %}>
+    <summary>Filters{% if filters_active %} (active){% endif %}</summary>
+
+    <div class="filters">
+      <div class="field">
+        <label for="filter-university">University</label>
+        <select name="university_id" id="filter-university" class="input" onchange="this.form.submit()">
+          <option value="">All universities</option>
+          {% for uni in universities %}
+            <option value="{{ uni.id }}" {% if selected.university_id == uni.id %}selected{% endif %}>{{ uni.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="filter-course">Course</label>
+        <select name="course_id" id="filter-course" class="input" onchange="this.form.submit()" {% if not selected.university_id %}disabled{% endif %}>
+          <option value="">All courses</option>
+          {% for c in courses %}
+            <option value="{{ c.id }}" {% if selected.course_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="filter-semester">Semester</label>
+        <select name="semester_id" id="filter-semester" class="input" onchange="this.form.submit()" {% if not selected.course_id %}disabled{% endif %}>
+          <option value="">All semesters</option>
+          {% for s in semesters %}
+            <option value="{{ s.id }}" {% if selected.semester_id == s.id %}selected{% endif %}>Semester {{ s.number }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="filter-sort">Sort by</label>
+        <select name="sort" id="filter-sort" class="input" onchange="this.form.submit()">
+          <option value="recent" {% if selected.sort == "recent" %}selected{% endif %}>Most recent</option>
+          <option value="downloads" {% if selected.sort == "downloads" %}selected{% endif %}>Most downloaded</option>
+          <option value="verified" {% if selected.sort == "verified" %}selected{% endif %}>Verified first</option>
+        </select>
+      </div>
+
+      {% if filters_active %}
+        <div class="field">
+          <label>&nbsp;</label>
+          <a class="btn" href="{{ url_for('main.home') }}">Clear filters</a>
+        </div>
+      {% endif %}
+    </div>
+  </details>
+</form>
+
+{% if resources %}
+  <ul class="card-list">
+    {% for r in resources %}
+      <li class="card resource-row">
+        <div>
+          <a class="title-link" href="{{ url_for('resources.detail', resource_id=r.id) }}">{{ r.title }}</a>
+          {% if r.is_verified %}<span class="badge badge-verified">Verified</span>{% endif %}
+          {% if r.is_premium %}<span class="badge badge-premium">Premium</span>{% endif %}
+          <div class="resource-meta">
+            {{ r.subject.name }} &middot; {{ r.subject.semester.course.name }} Sem {{ r.subject.semester.number }} &middot;
+            {{ r.subject.semester.course.university.name }} &middot; {{ r.resource_type|capitalize }}
+          </div>
+        </div>
+        <div class="resource-stats">{{ r.download_count }} download{{ "s" if r.download_count != 1 else "" }}</div>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <div class="pagination">
+    {% if pagination.has_prev %}
+      <a href="{{ url_for('main.home', page=pagination.prev_num, **filter_args) }}">&laquo; Prev</a>
+    {% endif %}
+    <span class="current">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    {% if pagination.has_next %}
+      <a href="{{ url_for('main.home', page=pagination.next_num, **filter_args) }}">Next &raquo;</a>
+    {% endif %}
+  </div>
+{% else %}
+  <p class="muted">No resources found. Try different filters, or be the first to <a href="{{ url_for('resources.upload') }}">upload one</a>.</p>
+{% endif %}
+{% endblock %}
