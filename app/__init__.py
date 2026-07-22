@@ -104,4 +104,31 @@ def create_app(config_class=Config):
                 "the database) means DATABASE_URL needs a look."
             )
 
+        # Bootstrap admin promotion, same rationale as db.create_all() above:
+        # no Shell access on Render's free tier to run a one-off command, so
+        # this runs on every startup instead. Set INITIAL_ADMIN_EMAIL in
+        # Render's environment variables (dashboard, not Shell) to the
+        # account's email -- it only takes effect once that user has actually
+        # signed up/signed in at least once, so it's safe to leave set
+        # permanently: it's a no-op once they're already admin, and it
+        # doesn't create a user that doesn't exist yet.
+        admin_email = app.config.get("INITIAL_ADMIN_EMAIL")
+        if admin_email:
+            try:
+                from app.models import User
+
+                user = User.query.filter_by(email=admin_email.lower().strip()).first()
+                if user is None:
+                    app.logger.warning(
+                        "INITIAL_ADMIN_EMAIL is set to %s but no user with "
+                        "that email exists yet -- sign up/sign in with that "
+                        "account first, then restart.", admin_email
+                    )
+                elif user.role != "admin":
+                    user.role = "admin"
+                    db.session.commit()
+                    app.logger.info("Promoted %s to admin via INITIAL_ADMIN_EMAIL.", user.email)
+            except Exception:
+                app.logger.exception("Admin promotion check raised on startup.")
+
     return app
