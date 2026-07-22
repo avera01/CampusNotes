@@ -80,4 +80,28 @@ def create_app(config_class=Config):
             version = 0
         return url_for("static", filename=filename) + f"?v={version}"
 
+    # Auto-create any missing tables on startup. This exists because
+    # Render's free tier has no Shell access to run a one-off migration
+    # command by hand -- gunicorn starting the app is the only hook we get.
+    #
+    # Safe to run on every restart: db.create_all() only issues CREATE
+    # TABLE for tables that don't already exist (it inspects the database
+    # first), so existing tables/data are never touched or duplicated.
+    # The one edge case is gunicorn running multiple worker processes,
+    # each of which calls create_app() independently and could theoretically
+    # race to create the same table at once -- if that happens, the loser
+    # gets a "table already exists" error even though the outcome (the
+    # table exists) is exactly what we want, so that specific error is
+    # swallowed (after logging it) rather than crashing that worker.
+    with app.app_context():
+        try:
+            db.create_all()
+        except Exception:
+            app.logger.exception(
+                "db.create_all() raised on startup -- if this is a "
+                "\"already exists\" error from a concurrent gunicorn "
+                "worker it's harmless; anything else (e.g. can't reach "
+                "the database) means DATABASE_URL needs a look."
+            )
+
     return app
