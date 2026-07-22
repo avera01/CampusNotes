@@ -4,6 +4,8 @@
 {% block content %}
 <h1>Admin dashboard</h1>
 
+<p><a class="btn" href="{{ url_for('admin.catalog') }}">Manage catalog (Universities, Courses, Semesters, Subjects)</a></p>
+
 <h2>Pending verification ({{ pending|length }})</h2>
 {% if pending %}
   <ul class="card-list">
