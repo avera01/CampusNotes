@@ -32,3 +32,9 @@ class Config:
     # frontend/templates.
     GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+
+    # If set, that user is (re-)promoted to admin on every startup -- see
+    # the promotion check in app/__init__.py. Bootstrap mechanism for hosts
+    # like Render's free tier with no Shell access to run a one-off command
+    # by hand. Unset (the default) means this does nothing.
+    INITIAL_ADMIN_EMAIL = os.environ.get("INITIAL_ADMIN_EMAIL")
