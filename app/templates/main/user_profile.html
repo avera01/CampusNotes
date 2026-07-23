@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+{% block title %}{{ profile_user.name }} · CampusNotes{% endblock %}
+
+{% block content %}
+{% set profile_avatar_url = avatar_url(profile_user) %}
+<div class="card account-card">
+  <div class="avatar-row">
+    {% if profile_avatar_url %}
+      <img src="{{ profile_avatar_url }}" alt="" class="avatar-preview">
+    {% else %}
+      <div class="avatar-fallback avatar-preview">{{ profile_user.name[0]|upper }}</div>
+    {% endif %}
+
+    <div>
+      <p>
+        <strong>{{ profile_user.name }}</strong>
+        <span class="badge badge-{{ profile_user.user_type }}">{{ profile_user.user_type|capitalize }}</span>
+      </p>
+      {% if profile_user.university %}
+        <p class="muted">
+          {{ profile_user.university.name }}
+          {% if profile_user.course %} &middot; {{ profile_user.course.name }}{% endif %}
+        </p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<h2>Uploads ({{ uploads|length }})</h2>
+{% if uploads %}
+  <ul class="card-list">
+    {% for r in uploads %}
+      {{ macros.resource_card(r, show_uploader=False) }}
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="muted">No uploads yet.</p>
+{% endif %}
+{% endblock %}

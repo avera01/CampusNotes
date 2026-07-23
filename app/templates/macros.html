@@ -19,3 +19,28 @@
   </button>
 </div>
 {% endmacro %}
+
+{% macro resource_card(r, show_uploader=True) %}
+{# Shared resource-list card: title + Verified/Premium badges, subject/course/
+   university meta line, optional uploader byline (name + user_type badge,
+   linked to their public profile), and download count. Used on Home,
+   Search, "My uploads" (account.html), and a user's public profile --
+   show_uploader=False on the latter two since the uploader is already
+   implied by the page context (it's a list of *this person's* uploads). #}
+<li class="card resource-row">
+  <div>
+    <a class="title-link" href="{{ url_for('resources.detail', resource_id=r.id) }}">{{ r.title }}</a>
+    {% if r.is_verified %}<span class="badge badge-verified">Verified</span>{% endif %}
+    {% if r.is_premium %}<span class="badge badge-premium">Premium</span>{% endif %}
+    <div class="resource-meta">
+      {{ r.subject.name }} &middot; {{ r.subject.semester.course.name }} Sem {{ r.subject.semester.number }} &middot;
+      {{ r.subject.semester.course.university.name }} &middot; {{ r.resource_type|capitalize }}
+      {% if show_uploader %}
+        &middot; <a href="{{ url_for('main.user_profile', user_id=r.uploader_id) }}">{{ r.uploader.name }}</a>
+        <span class="badge badge-{{ r.uploader.user_type }}">{{ r.uploader.user_type|capitalize }}</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="resource-stats">{{ r.download_count }} download{{ "s" if r.download_count != 1 else "" }}</div>
+</li>
+{% endmacro %}

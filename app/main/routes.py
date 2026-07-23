@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, abort
 
 from app.extensions import db
-from app.models import University, Course, Semester, Subject, Resource
+from app.models import University, Course, Semester, Subject, Resource, User
 
 main_bp = Blueprint("main", __name__)
 
@@ -98,3 +98,19 @@ def about():
 def browse():
     """Old URL kept working -- redirects to the Search page."""
     return redirect(url_for("main.search", **request.args))
+
+
+@main_bp.route("/users/<int:user_id>")
+def user_profile(user_id):
+    """Public profile: name, avatar, user_type badge, University/Course (if
+    set), and their uploads. No login required -- same as the public avatar
+    route. Only fields referenced in the template are ever rendered, so
+    email/password_hash/role/google_sub stay off this page by construction.
+    """
+    user = db.session.get(User, user_id) or abort(404)
+    uploads = (
+        Resource.query.filter_by(uploader_id=user.id)
+        .order_by(Resource.created_at.desc())
+        .all()
+    )
+    return render_template("main/user_profile.html", profile_user=user, uploads=uploads)

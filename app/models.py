@@ -88,6 +88,12 @@ class User(UserMixin, db.Model):
     # Nullable: accounts created via Google Sign-In have no password.
     password_hash = db.Column(db.String(255), nullable=True)
     role = db.Column(db.String(20), nullable=False, default="student")  # "student" | "admin"
+    # Separate from `role` on purpose: `role` gates admin permissions, `user_type`
+    # is just a public "who is this" label (Student/Faculty) shown as a badge.
+    # server_default (not just default=) because this landed on an existing table
+    # with existing rows -- the NOT NULL ALTER TABLE needs a DB-level default to
+    # backfill them, a Python-side default= only applies to new ORM inserts.
+    user_type = db.Column(db.String(20), nullable=False, server_default="student")  # "student" | "faculty"
     avatar_path = db.Column(db.String(500), nullable=True)  # relative to UPLOAD_FOLDER/avatars
 
     # How this account was originally created -- "email" or "google". Set

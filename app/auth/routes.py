@@ -38,6 +38,7 @@ def signup():
         user = User(
             name=form.name.data.strip(),
             email=form.email.data.lower().strip(),
+            user_type=form.user_type.data,
             university_id=form.university_id.data or None,
             course_id=form.course_id.data or None,
             current_semester=form.current_semester.data or None,
@@ -198,6 +199,7 @@ def update_profile():
 
     if form.validate_on_submit():
         current_user.name = form.name.data.strip()
+        current_user.user_type = form.user_type.data
         current_user.university_id = form.university_id.data or None
         current_user.course_id = form.course_id.data or None
         current_user.current_semester = form.current_semester.data or None

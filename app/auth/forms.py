@@ -7,6 +7,8 @@ from wtforms.validators import DataRequired, Email, Length, EqualTo, Optional, N
 AVATAR_ALLOWED_EXTENSIONS = ["png", "jpg", "jpeg", "webp"]
 AVATAR_MAX_SIZE_BYTES = 5 * 1024 * 1024  # 5MB
 
+USER_TYPE_CHOICES = [("student", "Student"), ("faculty", "Faculty")]
+
 
 class SignupForm(FlaskForm):
     name = StringField("Full name", validators=[DataRequired(), Length(max=100)])
@@ -15,6 +17,7 @@ class SignupForm(FlaskForm):
     confirm_password = PasswordField(
         "Confirm password", validators=[DataRequired(), EqualTo("password", message="Passwords must match")]
     )
+    user_type = SelectField("I am a", choices=USER_TYPE_CHOICES, validators=[DataRequired()])
     university_id = SelectField("University", coerce=int, validators=[Optional()])
     course_id = SelectField("Course", coerce=int, validators=[Optional()])
     current_semester = IntegerField("Current semester", validators=[Optional(), NumberRange(min=1, max=12)])
@@ -29,6 +32,7 @@ class LoginForm(FlaskForm):
 
 class ProfileForm(FlaskForm):
     name = StringField("Full name", validators=[DataRequired(), Length(max=100)])
+    user_type = SelectField("I am a", choices=USER_TYPE_CHOICES, validators=[DataRequired()])
     university_id = SelectField("University", coerce=int, validators=[Optional()])
     course_id = SelectField("Course", coerce=int, validators=[Optional()])
     current_semester = IntegerField("Current semester", validators=[Optional(), NumberRange(min=1, max=12)])

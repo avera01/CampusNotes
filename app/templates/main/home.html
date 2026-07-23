@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "macros.html" as macros %}
 {% block title %}CampusNotes{% endblock %}
 
 {% block content %}
@@ -66,18 +67,7 @@
 {% if resources %}
   <ul class="card-list">
     {% for r in resources %}
-      <li class="card resource-row">
-        <div>
-          <a class="title-link" href="{{ url_for('resources.detail', resource_id=r.id) }}">{{ r.title }}</a>
-          {% if r.is_verified %}<span class="badge badge-verified">Verified</span>{% endif %}
-          {% if r.is_premium %}<span class="badge badge-premium">Premium</span>{% endif %}
-          <div class="resource-meta">
-            {{ r.subject.name }} &middot; {{ r.subject.semester.course.name }} Sem {{ r.subject.semester.number }} &middot;
-            {{ r.subject.semester.course.university.name }} &middot; {{ r.resource_type|capitalize }}
-          </div>
-        </div>
-        <div class="resource-stats">{{ r.download_count }} download{{ "s" if r.download_count != 1 else "" }}</div>
-      </li>
+      {{ macros.resource_card(r) }}
     {% endfor %}
   </ul>
 

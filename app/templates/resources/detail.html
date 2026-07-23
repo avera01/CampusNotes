@@ -16,7 +16,9 @@
     </p>
     <p class="muted">
       {{ resource.resource_type|capitalize }} &middot;
-      Uploaded by {{ resource.uploader.name }} &middot;
+      Uploaded by <a href="{{ url_for('main.user_profile', user_id=resource.uploader.id) }}">{{ resource.uploader.name }}</a>
+      <span class="badge badge-{{ resource.uploader.user_type }}">{{ resource.uploader.user_type|capitalize }}</span>
+      &middot;
       {{ resource.download_count }} download{{ "s" if resource.download_count != 1 else "" }}
     </p>
   </div>

@@ -382,6 +382,8 @@ textarea.input { resize: vertical; }
 }
 .badge-verified { background: #dcfce7; color: var(--color-success); }
 .badge-premium { background: #fef3c7; color: #b45309; }
+.badge-student { background: #e0e7ff; color: #4338ca; }
+.badge-faculty { background: #fce7f3; color: #be185d; }
 
 .tags { margin: 8px 0; }
 .tag {
