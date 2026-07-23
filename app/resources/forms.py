@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
-from wtforms import StringField, TextAreaField, SelectField, IntegerField, BooleanField, SubmitField
+from wtforms import StringField, TextAreaField, SelectField, IntegerField, BooleanField, RadioField, SubmitField
 from wtforms.validators import DataRequired, Length, Optional, NumberRange
 
 ALLOWED_EXTENSIONS = ["pdf", "doc", "docx", "png", "jpg", "jpeg"]
@@ -29,3 +29,15 @@ class UploadForm(FlaskForm):
         validators=[FileRequired(), FileAllowed(ALLOWED_EXTENSIONS, "Unsupported file type")],
     )
     submit = SubmitField("Upload")
+
+
+class RatingForm(FlaskForm):
+    # Choices restricted to 1-5 means WTForms' own choice validation already
+    # rejects anything else -- no separate NumberRange needed.
+    #
+    # Order is 5..1, not 1..5: the CSS-only star-hover trick (see
+    # .star-rating in style.css) needs radios in DOM order highest-to-lowest
+    # so the `~` sibling selector can highlight "this star and everything
+    # before it" -- flex-direction: row-reverse then flips the *visual*
+    # order back to the normal 1-on-the-left layout.
+    stars = RadioField("Rating", choices=[(i, "★") for i in range(5, 0, -1)], coerce=int, validators=[DataRequired()])

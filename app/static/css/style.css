@@ -385,6 +385,34 @@ textarea.input { resize: vertical; }
 .badge-student { background: #e0e7ff; color: #4338ca; }
 .badge-faculty { background: #fce7f3; color: #be185d; }
 
+.rating-summary { color: var(--color-muted); }
+.rating-summary strong { color: var(--color-text); }
+
+/* Classic CSS-only star picker: radios in reverse DOM order + sibling
+   selectors give hover/checked fill without any JS. Each radio's onchange
+   submits the form immediately (same pattern as the Home/Search filter
+   selects), so clicking a star is a one-click rating submission. */
+.star-rating {
+  display: inline-flex;
+  flex-direction: row-reverse;
+  font-size: 1.6rem;
+}
+.star-rating input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.star-rating label {
+  cursor: pointer;
+  color: var(--color-border);
+  padding: 0 2px;
+}
+.star-rating input:checked ~ label,
+.star-rating label:hover,
+.star-rating label:hover ~ label {
+  color: #f59e0b;
+}
+
 .tags { margin: 8px 0; }
 .tag {
   display: inline-block;

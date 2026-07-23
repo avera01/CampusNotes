@@ -171,5 +171,43 @@ class Resource(db.Model):
 
     verified_by = db.relationship("User", foreign_keys=[verified_by_id])
 
+    @property
+    def average_rating(self):
+        """None if unrated. Computed in Python over the `ratings` backref
+        rather than a SQL aggregate -- same lazy-loaded-relationship style
+        already used everywhere else in this app (e.g. resource.subject.
+        semester.course.university chains), not a special case for ratings.
+        """
+        if not self.ratings:
+            return None
+        return sum(r.stars for r in self.ratings) / len(self.ratings)
+
+    @property
+    def rating_count(self):
+        return len(self.ratings)
+
     def __repr__(self):
         return f"<Resource {self.title}>"
+
+
+class Rating(db.Model):
+    __tablename__ = "ratings"
+    __table_args__ = (
+        # App-level upsert logic (query-then-update-or-insert, see
+        # resources/routes.py:rate) is the primary mechanism for "one rating
+        # per user per resource" -- this is the DB-level backstop.
+        db.UniqueConstraint("user_id", "resource_id", name="uq_rating_user_resource"),
+        db.CheckConstraint("stars >= 1 AND stars <= 5", name="ck_rating_stars_range"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    resource_id = db.Column(db.Integer, db.ForeignKey("resources.id"), nullable=False)
+    stars = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow)
+
+    user = db.relationship("User", backref="ratings")
+    resource = db.relationship("Resource", backref="ratings")
+
+    def __repr__(self):
+        return f"<Rating {self.stars}* by user {self.user_id} on resource {self.resource_id}>"

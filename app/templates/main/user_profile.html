@@ -23,6 +23,14 @@
           {% if profile_user.course %} &middot; {{ profile_user.course.name }}{% endif %}
         </p>
       {% endif %}
+      {% if reputation_count %}
+        <p class="rating-summary">
+          Uploader reputation:
+          <strong>{{ "%.1f"|format(reputation_avg) }} &#9733;</strong>
+          ({{ reputation_count }} rating{{ "s" if reputation_count != 1 else "" }} across
+          {{ uploads|length }} upload{{ "s" if uploads|length != 1 else "" }})
+        </p>
+      {% endif %}
     </div>
   </div>
 </div>

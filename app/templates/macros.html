@@ -35,6 +35,9 @@
     <div class="resource-meta">
       {{ r.subject.name }} &middot; {{ r.subject.semester.course.name }} Sem {{ r.subject.semester.number }} &middot;
       {{ r.subject.semester.course.university.name }} &middot; {{ r.resource_type|capitalize }}
+      {% if r.rating_count %}
+        &middot; {{ "%.1f"|format(r.average_rating) }} &#9733; ({{ r.rating_count }} rating{{ "s" if r.rating_count != 1 else "" }})
+      {% endif %}
       {% if show_uploader %}
         &middot; <a href="{{ url_for('main.user_profile', user_id=r.uploader_id) }}">{{ r.uploader.name }}</a>
         <span class="badge badge-{{ r.uploader.user_type }}">{{ r.uploader.user_type|capitalize }}</span>

@@ -21,6 +21,32 @@
       &middot;
       {{ resource.download_count }} download{{ "s" if resource.download_count != 1 else "" }}
     </p>
+
+    <p class="rating-summary">
+      {% if resource.rating_count %}
+        <strong>{{ "%.1f"|format(resource.average_rating) }} &#9733;</strong>
+        ({{ resource.rating_count }} rating{{ "s" if resource.rating_count != 1 else "" }})
+      {% else %}
+        No ratings yet
+      {% endif %}
+    </p>
+
+    {% if rating_form %}
+      <form method="POST" action="{{ url_for('resources.rate', resource_id=resource.id) }}">
+        {{ rating_form.hidden_tag() }}
+        <div class="star-rating">
+          {% for subfield in rating_form.stars %}
+            {{ subfield(onchange="this.form.submit()") }}
+            {{ subfield.label }}
+          {% endfor %}
+        </div>
+        {% if user_rating %}<span class="muted">Your rating: {{ user_rating }} &#9733;</span>{% endif %}
+      </form>
+    {% elif not locked and current_user.is_authenticated and current_user.id == resource.uploader.id %}
+      <p class="muted">You can't rate your own upload.</p>
+    {% elif not locked and not current_user.is_authenticated %}
+      <p class="muted"><a href="{{ url_for('auth.login', next=request.path) }}">Log in</a> to rate this resource.</p>
+    {% endif %}
   </div>
 
   {% if resource.description %}

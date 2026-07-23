@@ -113,4 +113,19 @@ def user_profile(user_id):
         .order_by(Resource.created_at.desc())
         .all()
     )
-    return render_template("main/user_profile.html", profile_user=user, uploads=uploads)
+
+    # "Uploader reputation": every rating across every one of their uploads,
+    # combined into one average -- computed in Python over the already-
+    # fetched `uploads` list (no extra query), same lazy-relationship style
+    # as Resource.average_rating in models.py.
+    all_ratings = [rating for upload in uploads for rating in upload.ratings]
+    reputation_avg = sum(r.stars for r in all_ratings) / len(all_ratings) if all_ratings else None
+    reputation_count = len(all_ratings)
+
+    return render_template(
+        "main/user_profile.html",
+        profile_user=user,
+        uploads=uploads,
+        reputation_avg=reputation_avg,
+        reputation_count=reputation_count,
+    )
