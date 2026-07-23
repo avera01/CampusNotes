@@ -3,23 +3,11 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 
 from app.extensions import db
-from app.models import Resource, Subject, Semester, Course, University, Rating
-from app.resources.forms import UploadForm, RatingForm
+from app.models import Resource, Subject, Semester, Course, University, Rating, Comment
+from app.resources.forms import UploadForm, RatingForm, CommentForm, EmptyForm
 from app.resources.storage import save_resource_file, resource_file_location
 
 resources_bp = Blueprint("resources", __name__, url_prefix="/resources")
-
-
-def _is_premium_locked(resource):
-    """Premium resources are locked for everyone except the uploader and admins,
-    since there's no payment/subscription system yet -- this is UI/logic scaffolding
-    for a future "unlock via purchase" flow.
-    """
-    if not resource.is_premium:
-        return False
-    if not current_user.is_authenticated:
-        return True
-    return not (current_user.is_admin or current_user.id == resource.uploader_id)
 
 
 @resources_bp.route("/upload", methods=["GET", "POST"])
@@ -81,7 +69,6 @@ def upload():
                 file_size=size,
                 subject_id=subject.id,
                 uploader_id=current_user.id,
-                is_premium=form.is_premium.data,
             )
             db.session.add(resource)
             db.session.commit()
@@ -94,23 +81,32 @@ def upload():
 @resources_bp.route("/<int:resource_id>")
 def detail(resource_id):
     resource = db.session.get(Resource, resource_id) or abort(404)
-    locked = _is_premium_locked(resource)
 
     rating_form = None
     user_rating = None
-    if current_user.is_authenticated and not locked and current_user.id != resource.uploader_id:
+    if current_user.is_authenticated and current_user.id != resource.uploader_id:
         rating_form = RatingForm()
         existing = Rating.query.filter_by(user_id=current_user.id, resource_id=resource.id).first()
         if existing:
             user_rating = existing.stars
             rating_form.stars.data = existing.stars
 
+    comments = (
+        Comment.query.filter_by(resource_id=resource.id)
+        .order_by(Comment.created_at.desc())
+        .all()
+    )
+    comment_form = CommentForm() if current_user.is_authenticated else None
+    delete_comment_form = EmptyForm() if current_user.is_authenticated else None
+
     return render_template(
         "resources/detail.html",
         resource=resource,
-        locked=locked,
         rating_form=rating_form,
         user_rating=user_rating,
+        comments=comments,
+        comment_form=comment_form,
+        delete_comment_form=delete_comment_form,
     )
 
 
@@ -122,9 +118,6 @@ def rate(resource_id):
     if current_user.id == resource.uploader_id:
         flash("You can't rate your own upload.", "error")
         return redirect(url_for("resources.detail", resource_id=resource.id))
-
-    if _is_premium_locked(resource):
-        abort(403)
 
     form = RatingForm()
     if form.validate_on_submit():
@@ -148,9 +141,6 @@ def rate(resource_id):
 @resources_bp.route("/<int:resource_id>/download")
 def download(resource_id):
     resource = db.session.get(Resource, resource_id) or abort(404)
-    if _is_premium_locked(resource):
-        flash("This is premium content and isn't available yet -- payments aren't set up.", "info")
-        return redirect(url_for("resources.detail", resource_id=resource.id))
 
     resource.download_count += 1
     db.session.commit()
@@ -162,10 +152,43 @@ def download(resource_id):
 @resources_bp.route("/<int:resource_id>/preview")
 def preview(resource_id):
     resource = db.session.get(Resource, resource_id) or abort(404)
-    if _is_premium_locked(resource):
-        abort(403)
     if resource.file_type != "pdf":
         abort(404)
 
     directory, filename = resource_file_location(current_app.config["UPLOAD_FOLDER"], resource.file_path)
     return send_from_directory(directory, filename, as_attachment=False)
+
+
+@resources_bp.route("/<int:resource_id>/comments", methods=["POST"])
+@login_required
+def add_comment(resource_id):
+    resource = db.session.get(Resource, resource_id) or abort(404)
+
+    form = CommentForm()
+    if form.validate_on_submit():
+        comment = Comment(user_id=current_user.id, resource_id=resource.id, body=form.body.data.strip())
+        db.session.add(comment)
+        db.session.commit()
+        flash("Comment posted.", "success")
+    else:
+        flash("Comment couldn't be posted.", "error")
+
+    return redirect(url_for("resources.detail", resource_id=resource.id))
+
+
+@resources_bp.route("/<int:resource_id>/comments/<int:comment_id>/delete", methods=["POST"])
+@login_required
+def delete_comment(resource_id, comment_id):
+    comment = db.session.get(Comment, comment_id) or abort(404)
+    if comment.resource_id != resource_id:
+        abort(404)
+    if comment.user_id != current_user.id and not current_user.is_admin:
+        abort(403)
+
+    form = EmptyForm()
+    if form.validate_on_submit():
+        db.session.delete(comment)
+        db.session.commit()
+        flash("Comment deleted.", "info")
+
+    return redirect(url_for("resources.detail", resource_id=resource_id))

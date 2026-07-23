@@ -63,11 +63,6 @@
       {% for error in form.file.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
     </div>
 
-    <div class="field field-checkbox">
-      {{ form.is_premium() }}
-      {{ form.is_premium.label }}
-    </div>
-
     {{ form.submit(class_="btn btn-primary") }}
   </form>
 </div>

@@ -164,6 +164,11 @@ class Resource(db.Model):
     verified_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     verified_at = db.Column(db.DateTime, nullable=True)
 
+    # Informational only -- no view/download/preview enforcement reads this
+    # anymore (removed; all resources are freely accessible regardless of
+    # this flag). Kept rather than dropped: it's one boolean with real data
+    # already in production and no query cost to leaving it, and it's the
+    # natural hook if a real payment/subscription feature gets built later.
     is_premium = db.Column(db.Boolean, default=False, nullable=False)
 
     download_count = db.Column(db.Integer, default=0, nullable=False)
@@ -211,3 +216,19 @@ class Rating(db.Model):
 
     def __repr__(self):
         return f"<Rating {self.stars}* by user {self.user_id} on resource {self.resource_id}>"
+
+
+class Comment(db.Model):
+    __tablename__ = "comments"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    resource_id = db.Column(db.Integer, db.ForeignKey("resources.id"), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow)
+
+    user = db.relationship("User", backref="comments")
+    resource = db.relationship("Resource", backref="comments")
+
+    def __repr__(self):
+        return f"<Comment {self.id} by user {self.user_id} on resource {self.resource_id}>"

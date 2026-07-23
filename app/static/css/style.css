@@ -413,6 +413,13 @@ textarea.input { resize: vertical; }
   color: #f59e0b;
 }
 
+.comments-section { margin-top: 28px; }
+.comment-form { margin: 12px 0 20px; }
+.comment-form textarea { min-height: 70px; }
+.comment-meta { margin: 0 0 4px; font-size: 0.9rem; }
+.comment-body { margin: 0 0 8px; white-space: pre-wrap; }
+.comment form { margin: 0; }
+
 .tags { margin: 8px 0; }
 .tag {
   display: inline-block;
@@ -426,14 +433,6 @@ textarea.input { resize: vertical; }
 
 .resource-actions { display: flex; gap: 10px; margin: 16px 0; }
 .btn:not(.btn-primary) { background: var(--color-surface); border: 1px solid var(--color-border); color: var(--color-text); }
-
-.premium-lock {
-  background: #fffbeb;
-  border: 1px solid #fde68a;
-  border-radius: var(--radius);
-  padding: 16px;
-  margin: 16px 0;
-}
 
 .pdf-preview { margin-top: 16px; }
 .pdf-preview iframe {

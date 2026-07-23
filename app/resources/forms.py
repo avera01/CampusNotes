@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
-from wtforms import StringField, TextAreaField, SelectField, IntegerField, BooleanField, RadioField, SubmitField
+from wtforms import StringField, TextAreaField, SelectField, IntegerField, RadioField, SubmitField
 from wtforms.validators import DataRequired, Length, Optional, NumberRange
 
 ALLOWED_EXTENSIONS = ["pdf", "doc", "docx", "png", "jpg", "jpeg"]
@@ -23,7 +23,6 @@ class UploadForm(FlaskForm):
     course_name = StringField("Course", validators=[DataRequired(), Length(max=50)])
     semester_number = IntegerField("Semester", validators=[DataRequired(), NumberRange(min=1, max=20)])
     subject_name = StringField("Subject", validators=[DataRequired(), Length(max=150)])
-    is_premium = BooleanField("Mark as Premium (locked content, no payment yet)")
     file = FileField(
         "File",
         validators=[FileRequired(), FileAllowed(ALLOWED_EXTENSIONS, "Unsupported file type")],
@@ -41,3 +40,17 @@ class RatingForm(FlaskForm):
     # before it" -- flex-direction: row-reverse then flips the *visual*
     # order back to the normal 1-on-the-left layout.
     stars = RadioField("Rating", choices=[(i, "★") for i in range(5, 0, -1)], coerce=int, validators=[DataRequired()])
+
+
+class CommentForm(FlaskForm):
+    body = TextAreaField("Comment", validators=[DataRequired(), Length(max=2000)])
+    submit = SubmitField("Post comment")
+
+
+class EmptyForm(FlaskForm):
+    """No visible fields -- just carries a CSRF token for the one-click
+    comment-delete button. Same pattern as EmptyForm in admin/forms.py and
+    auth/forms.py -- duplicated per-blueprint rather than shared, matching
+    how this app already does it.
+    """
+    pass
