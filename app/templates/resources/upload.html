@@ -42,16 +42,15 @@
       </div>
 
       <div class="field">
-        <label for="upload-course">Course</label>
-        <select id="upload-course" class="input" disabled>
-          <option value="">-- select university first --</option>
-        </select>
+        {{ form.course_id.label }}
+        {{ form.course_id(class_="input", id="upload-course", disabled=true) }}
+        {% for error in form.course_id.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="field">
-        {{ form.semester_id.label }}
-        {{ form.semester_id(class_="input", id="upload-semester", disabled=true) }}
-        {% for error in form.semester_id.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        {{ form.semester_number.label }}
+        {{ form.semester_number(class_="input", id="upload-semester", placeholder="e.g. 3") }}
+        {% for error in form.semester_number.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="field">
@@ -81,17 +80,16 @@
 <script>
   initCascade([
     { select: document.getElementById("upload-university") },
-    { select: document.getElementById("upload-course"), endpoint: "{{ url_for('main.api_courses') }}", param: "university_id", placeholder: "-- select course --" },
-    { select: document.getElementById("upload-semester"), endpoint: "{{ url_for('main.api_semesters') }}", param: "course_id", placeholder: "-- select semester --" }
+    { select: document.getElementById("upload-course"), endpoint: "{{ url_for('main.api_courses') }}", param: "university_id", placeholder: "-- select course --" }
   ]);
 
-  // Semester is the last real cascade field -- keep its disabled state in
+  // Course is the last real cascade field -- keep its disabled state in
   // sync with whether it has usable options so it actually submits.
-  document.getElementById("upload-semester").addEventListener("change", function () {
+  document.getElementById("upload-course").addEventListener("change", function () {
     this.disabled = !this.value;
   });
   document.querySelector("form").addEventListener("submit", function () {
-    document.getElementById("upload-semester").disabled = false;
+    document.getElementById("upload-course").disabled = false;
   });
 </script>
 {% endblock %}

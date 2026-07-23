@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 
 from app.extensions import db
-from app.models import Resource, Subject, Semester, University
+from app.models import Resource, Subject, Semester, Course, University
 from app.resources.forms import UploadForm
 from app.resources.storage import save_resource_file, resource_file_location
 
@@ -28,10 +28,17 @@ def upload():
     form = UploadForm()
 
     if form.validate_on_submit():
-        semester = db.session.get(Semester, form.semester_id.data)
-        if semester is None:
-            flash("Please choose a valid university/course/semester from the dropdowns.", "error")
+        course = db.session.get(Course, form.course_id.data)
+        if course is None:
+            flash("Please choose a valid university/course from the dropdowns.", "error")
         else:
+            semester_number = form.semester_number.data
+            semester = Semester.query.filter_by(course_id=course.id, number=semester_number).first()
+            if semester is None:
+                semester = Semester(course_id=course.id, number=semester_number)
+                db.session.add(semester)
+                db.session.flush()  # assigns semester.id, needed below for the subject lookup
+
             subject_name = form.subject_name.data.strip()
             # Case-insensitive match so "Data Structures" and "data structures"
             # don't end up as two different subjects under the same semester.

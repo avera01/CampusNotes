@@ -36,8 +36,12 @@ filesystem). Local dev uses SQLite; production uses Render Postgres.
 - "Sign in with Google" (Authlib/OIDC) — see Google OAuth section below
 - Show/hide password eye-icon toggle on all password fields (shared Jinja
   macro + one JS file)
-- Subject is now free text on the upload form (was a dropdown, then briefly
-  free text + datalist suggestions, now plain free text — see "In progress")
+- Subject and Semester are now free text on the upload form (was
+  University/Course/Semester/Subject all dropdowns; Subject went through a
+  brief free-text + datalist stage before landing on plain free text;
+  Semester was converted last, see "In progress"). University and Course
+  are still dropdowns (still cascading via JS, University → Course), since
+  the app has no natural free-text identifier for those.
 - About Us page
 - Admin catalog management UI (`/admin/catalog`) — create-only forms for
   University/Course/Semester/Subject, since Render's free tier has no Shell
@@ -85,6 +89,27 @@ filesystem). Local dev uses SQLite; production uses Render Postgres.
    and wasn't affected by the datalist removal in (c). This is **done**,
    not actually pending — flagging here only because it changed shape
    multiple times and is easy to misremember.
+
+3. **Semester field converted to free text — done.** The upload form's
+   cascade used to be University → Course → Semester (dropdown) → Subject
+   (free text), with `semester_id` submitted directly from the JS-populated
+   dropdown. Semester is now a plain number input (`semester_number`,
+   `IntegerField`, 1–20) instead, and the JS cascade only goes
+   University → Course. Since the server now needs to know which *course*
+   a typed-in semester number belongs to, `course_id` became a real
+   submitted `SelectField` (`validate_choice=False`, same pattern the old
+   `semester_id` used) instead of the JS-only, never-submitted select it
+   was before. The route (`app/resources/routes.py:upload`) does a
+   `Semester.query.filter_by(course_id=..., number=...)`
+   lookup-or-create, mirroring the existing Subject lookup-or-create —
+   relies on the `uq_semester_course_number` unique constraint already on
+   the `Semester` model. Verified end-to-end in the browser: submitting
+   semester "7" under BCA created a new `Semester(course_id=1, number=7)`
+   row; a second upload with the same course + "7" reused that same row
+   (confirmed via direct DB query, no duplicate). Home/Search page filters
+   are untouched — they still use the `Semester` dropdown fed by
+   `/api/semesters`, since those are filtering existing data rather than
+   creating new rows.
 
 ## Known pending issues / rough edges
 

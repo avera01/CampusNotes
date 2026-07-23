@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
-from wtforms import StringField, TextAreaField, SelectField, BooleanField, SubmitField
-from wtforms.validators import DataRequired, Length, Optional
+from wtforms import StringField, TextAreaField, SelectField, IntegerField, BooleanField, SubmitField
+from wtforms.validators import DataRequired, Length, Optional, NumberRange
 
 ALLOWED_EXTENSIONS = ["pdf", "doc", "docx", "png", "jpg", "jpeg"]
 
@@ -14,13 +14,14 @@ class UploadForm(FlaskForm):
         "Type",
         choices=[("notes", "Notes"), ("pyq", "Previous Year Question Paper"), ("syllabus", "Syllabus")],
     )
-    # University/Course are plain (non-WTForms) selects on the page, used only to narrow
-    # down the Semester dropdown via JS -- their values are never submitted. Semester IS
+    # University is a plain (non-WTForms) select on the page, used only to narrow
+    # down the Course dropdown via JS -- its value is never submitted. Course IS
     # submitted (its choices are populated client-side, so choice validation happens
-    # manually in the route). Subject is free text: the user types a subject name instead
-    # of picking from a dropdown, and the route looks up or creates a matching Subject
-    # under the chosen semester.
-    semester_id = SelectField("Semester", coerce=int, validate_choice=False)
+    # manually in the route). Semester and Subject are free text: the user types a
+    # semester number / subject name instead of picking from a dropdown, and the
+    # route looks up or creates matching Semester/Subject rows under the chosen course.
+    course_id = SelectField("Course", coerce=int, validate_choice=False)
+    semester_number = IntegerField("Semester", validators=[DataRequired(), NumberRange(min=1, max=20)])
     subject_name = StringField("Subject", validators=[DataRequired(), Length(max=150)])
     is_premium = BooleanField("Mark as Premium (locked content, no payment yet)")
     file = FileField(
