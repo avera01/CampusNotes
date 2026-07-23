@@ -143,7 +143,7 @@ def run():
         university = get_or_create(
             University,
             code="NU",
-            defaults={"name": "Nagaland University", "location": "Lumami, Nagaland"},
+            defaults={"name": "Nagaland University"},
         )
 
         # Undergraduate (3-year, 6 semesters)

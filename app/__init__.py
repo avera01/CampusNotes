@@ -80,9 +80,10 @@ def create_app(config_class=Config):
             version = 0
         return url_for("static", filename=filename) + f"?v={version}"
 
-    # Auto-create any missing tables on startup. This exists because
-    # Render's free tier has no Shell access to run a one-off migration
-    # command by hand -- gunicorn starting the app is the only hook we get.
+    # Auto-create any missing tables on startup, then apply any pending
+    # Alembic migrations. Both exist because Render's free tier has no
+    # Shell access to run one-off commands by hand -- gunicorn starting the
+    # app is the only hook we get.
     #
     # Safe to run on every restart: db.create_all() only issues CREATE
     # TABLE for tables that don't already exist (it inspects the database
@@ -93,6 +94,14 @@ def create_app(config_class=Config):
     # gets a "table already exists" error even though the outcome (the
     # table exists) is exactly what we want, so that specific error is
     # swallowed (after logging it) rather than crashing that worker.
+    #
+    # migrate.upgrade() runs `flask db upgrade` in-process afterward, for
+    # schema changes create_all() can't do (drop/alter a column, add an
+    # index) -- e.g. the University.location drop and the Course
+    # case-insensitive unique index. It's idempotent (Alembic tracks the
+    # applied revision in an `alembic_version` table and no-ops if already
+    # current), so it's likewise safe on every restart and under the same
+    # concurrent-gunicorn-workers race as create_all() above.
     with app.app_context():
         try:
             db.create_all()
@@ -102,6 +111,18 @@ def create_app(config_class=Config):
                 "\"already exists\" error from a concurrent gunicorn "
                 "worker it's harmless; anything else (e.g. can't reach "
                 "the database) means DATABASE_URL needs a look."
+            )
+
+        try:
+            from flask_migrate import upgrade as migrate_upgrade
+
+            migrate_upgrade()
+        except Exception:
+            app.logger.exception(
+                "flask_migrate upgrade() raised on startup -- if this is "
+                "a race from a concurrent gunicorn worker applying the "
+                "same revision it's harmless; anything else means a "
+                "migration needs a look before it'll apply cleanly."
             )
 
         # Bootstrap admin promotion, same rationale as db.create_all() above:

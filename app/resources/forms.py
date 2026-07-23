@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
-from wtforms import StringField, TextAreaField, SelectField, BooleanField, SubmitField
-from wtforms.validators import DataRequired, Length, Optional
+from wtforms import StringField, TextAreaField, SelectField, IntegerField, BooleanField, SubmitField
+from wtforms.validators import DataRequired, Length, Optional, NumberRange
 
 ALLOWED_EXTENSIONS = ["pdf", "doc", "docx", "png", "jpg", "jpeg"]
 
@@ -14,13 +14,14 @@ class UploadForm(FlaskForm):
         "Type",
         choices=[("notes", "Notes"), ("pyq", "Previous Year Question Paper"), ("syllabus", "Syllabus")],
     )
-    # University/Course are plain (non-WTForms) selects on the page, used only to narrow
-    # down the Semester dropdown via JS -- their values are never submitted. Semester IS
-    # submitted (its choices are populated client-side, so choice validation happens
-    # manually in the route). Subject is free text: the user types a subject name instead
-    # of picking from a dropdown, and the route looks up or creates a matching Subject
-    # under the chosen semester.
-    semester_id = SelectField("Semester", coerce=int, validate_choice=False)
+    # University is the only admin-managed catalog level, so it's a real dropdown
+    # of existing rows (choices populated in the route). Course, Semester, and
+    # Subject are all free text: the user types a name/number instead of picking
+    # from a dropdown, and the route looks up or creates matching Course/Semester/
+    # Subject rows under the chosen University/Course/Semester.
+    university_id = SelectField("University", coerce=int, validators=[DataRequired()])
+    course_name = StringField("Course", validators=[DataRequired(), Length(max=50)])
+    semester_number = IntegerField("Semester", validators=[DataRequired(), NumberRange(min=1, max=20)])
     subject_name = StringField("Subject", validators=[DataRequired(), Length(max=150)])
     is_premium = BooleanField("Mark as Premium (locked content, no payment yet)")
     file = FileField(

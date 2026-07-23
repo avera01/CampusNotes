@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for
 
 from app.extensions import db
 from app.models import University, Course, Semester, Subject, Resource
@@ -98,35 +98,3 @@ def about():
 def browse():
     """Old URL kept working -- redirects to the Search page."""
     return redirect(url_for("main.search", **request.args))
-
-
-# --- Cascading-dropdown JSON endpoints -------------------------------------
-# Used by vanilla JS (static/js/cascade.js) on the upload/home/search pages so
-# selecting a University narrows Course, then Semester, then Subject, without
-# a full page reload or a JS framework.
-
-@main_bp.route("/api/courses")
-def api_courses():
-    university_id = request.args.get("university_id", type=int)
-    if not university_id:
-        return jsonify([])
-    courses = Course.query.filter_by(university_id=university_id).order_by(Course.name).all()
-    return jsonify([{"id": c.id, "label": c.name} for c in courses])
-
-
-@main_bp.route("/api/semesters")
-def api_semesters():
-    course_id = request.args.get("course_id", type=int)
-    if not course_id:
-        return jsonify([])
-    semesters = Semester.query.filter_by(course_id=course_id).order_by(Semester.number).all()
-    return jsonify([{"id": s.id, "label": f"Semester {s.number}"} for s in semesters])
-
-
-@main_bp.route("/api/subjects")
-def api_subjects():
-    semester_id = request.args.get("semester_id", type=int)
-    if not semester_id:
-        return jsonify([])
-    subjects = Subject.query.filter_by(semester_id=semester_id).order_by(Subject.name).all()
-    return jsonify([{"id": s.id, "label": s.name} for s in subjects])

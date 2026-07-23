@@ -21,7 +21,6 @@ class University(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
     code = db.Column(db.String(20), unique=True, nullable=False)
-    location = db.Column(db.String(150))
 
     courses = db.relationship("Course", backref="university", lazy=True, cascade="all, delete-orphan")
 
@@ -37,6 +36,13 @@ class Course(db.Model):
     full_name = db.Column(db.String(150))                    # e.g. "Bachelor of Computer Applications"
     total_semesters = db.Column(db.Integer, default=6)
     university_id = db.Column(db.Integer, db.ForeignKey("universities.id"), nullable=False)
+
+    # Case-insensitive so "BCA" and "bca" can't both get created by the
+    # upload form's lookup-or-create -- matches the app-level lower(name)
+    # check in resources/routes.py, rather than being a weaker DB backstop.
+    __table_args__ = (
+        db.Index("uq_course_university_name_ci", university_id, db.func.lower(name), unique=True),
+    )
 
     semesters = db.relationship("Semester", backref="course", lazy=True, cascade="all, delete-orphan")
 

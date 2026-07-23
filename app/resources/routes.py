@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 
 from app.extensions import db
-from app.models import Resource, Subject, Semester, University
+from app.models import Resource, Subject, Semester, Course, University
 from app.resources.forms import UploadForm
 from app.resources.storage import save_resource_file, resource_file_location
 
@@ -26,12 +26,34 @@ def _is_premium_locked(resource):
 @login_required
 def upload():
     form = UploadForm()
+    form.university_id.choices = [(u.id, u.name) for u in University.query.order_by(University.name).all()]
 
     if form.validate_on_submit():
-        semester = db.session.get(Semester, form.semester_id.data)
-        if semester is None:
-            flash("Please choose a valid university/course/semester from the dropdowns.", "error")
+        university = db.session.get(University, form.university_id.data)
+        if university is None:
+            flash("Please choose a valid university.", "error")
         else:
+            course_name = form.course_name.data.strip()
+            # Case-insensitive match so "BCA" and "bca" don't end up as two
+            # different courses under the same university -- same pattern as
+            # the Semester/Subject lookups below, backed by a matching
+            # case-insensitive unique index on (university_id, lower(name)).
+            course = Course.query.filter(
+                Course.university_id == university.id,
+                db.func.lower(Course.name) == course_name.lower(),
+            ).first()
+            if course is None:
+                course = Course(university_id=university.id, name=course_name)
+                db.session.add(course)
+                db.session.flush()  # assigns course.id, needed below for the semester lookup
+
+            semester_number = form.semester_number.data
+            semester = Semester.query.filter_by(course_id=course.id, number=semester_number).first()
+            if semester is None:
+                semester = Semester(course_id=course.id, number=semester_number)
+                db.session.add(semester)
+                db.session.flush()  # assigns semester.id, needed below for the subject lookup
+
             subject_name = form.subject_name.data.strip()
             # Case-insensitive match so "Data Structures" and "data structures"
             # don't end up as two different subjects under the same semester.
@@ -66,8 +88,7 @@ def upload():
             flash("Resource uploaded successfully.", "success")
             return redirect(url_for("resources.detail", resource_id=resource.id))
 
-    universities = University.query.order_by(University.name).all()
-    return render_template("resources/upload.html", form=form, universities=universities)
+    return render_template("resources/upload.html", form=form)
 
 
 @resources_bp.route("/<int:resource_id>")
