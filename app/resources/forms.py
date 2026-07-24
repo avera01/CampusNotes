@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
-from wtforms import StringField, TextAreaField, SelectField, BooleanField, SubmitField
-from wtforms.validators import DataRequired, Length, Optional
+from wtforms import StringField, TextAreaField, SelectField, IntegerField, RadioField, SubmitField
+from wtforms.validators import DataRequired, Length, Optional, NumberRange
 
 ALLOWED_EXTENSIONS = ["pdf", "doc", "docx", "png", "jpg", "jpeg"]
 
@@ -14,17 +14,43 @@ class UploadForm(FlaskForm):
         "Type",
         choices=[("notes", "Notes"), ("pyq", "Previous Year Question Paper"), ("syllabus", "Syllabus")],
     )
-    # University/Course are plain (non-WTForms) selects on the page, used only to narrow
-    # down the Semester dropdown via JS -- their values are never submitted. Semester IS
-    # submitted (its choices are populated client-side, so choice validation happens
-    # manually in the route). Subject is free text: the user types a subject name instead
-    # of picking from a dropdown, and the route looks up or creates a matching Subject
-    # under the chosen semester.
-    semester_id = SelectField("Semester", coerce=int, validate_choice=False)
+    # University is the only admin-managed catalog level, so it's a real dropdown
+    # of existing rows (choices populated in the route). Course, Semester, and
+    # Subject are all free text: the user types a name/number instead of picking
+    # from a dropdown, and the route looks up or creates matching Course/Semester/
+    # Subject rows under the chosen University/Course/Semester.
+    university_id = SelectField("University", coerce=int, validators=[DataRequired()])
+    course_name = StringField("Course", validators=[DataRequired(), Length(max=50)])
+    semester_number = IntegerField("Semester", validators=[DataRequired(), NumberRange(min=1, max=20)])
     subject_name = StringField("Subject", validators=[DataRequired(), Length(max=150)])
-    is_premium = BooleanField("Mark as Premium (locked content, no payment yet)")
     file = FileField(
         "File",
         validators=[FileRequired(), FileAllowed(ALLOWED_EXTENSIONS, "Unsupported file type")],
     )
     submit = SubmitField("Upload")
+
+
+class RatingForm(FlaskForm):
+    # Choices restricted to 1-5 means WTForms' own choice validation already
+    # rejects anything else -- no separate NumberRange needed.
+    #
+    # Order is 5..1, not 1..5: the CSS-only star-hover trick (see
+    # .star-rating in style.css) needs radios in DOM order highest-to-lowest
+    # so the `~` sibling selector can highlight "this star and everything
+    # before it" -- flex-direction: row-reverse then flips the *visual*
+    # order back to the normal 1-on-the-left layout.
+    stars = RadioField("Rating", choices=[(i, "★") for i in range(5, 0, -1)], coerce=int, validators=[DataRequired()])
+
+
+class CommentForm(FlaskForm):
+    body = TextAreaField("Comment", validators=[DataRequired(), Length(max=2000)])
+    submit = SubmitField("Post comment")
+
+
+class EmptyForm(FlaskForm):
+    """No visible fields -- just carries a CSRF token for the one-click
+    comment-delete button. Same pattern as EmptyForm in admin/forms.py and
+    auth/forms.py -- duplicated per-blueprint rather than shared, matching
+    how this app already does it.
+    """
+    pass

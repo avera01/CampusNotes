@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, abort
 
 from app.extensions import db
-from app.models import University, Course, Semester, Subject, Resource
+from app.models import University, Course, Semester, Subject, Resource, User
 
 main_bp = Blueprint("main", __name__)
 
@@ -100,33 +100,32 @@ def browse():
     return redirect(url_for("main.search", **request.args))
 
 
-# --- Cascading-dropdown JSON endpoints -------------------------------------
-# Used by vanilla JS (static/js/cascade.js) on the upload/home/search pages so
-# selecting a University narrows Course, then Semester, then Subject, without
-# a full page reload or a JS framework.
+@main_bp.route("/users/<int:user_id>")
+def user_profile(user_id):
+    """Public profile: name, avatar, user_type badge, University/Course (if
+    set), and their uploads. No login required -- same as the public avatar
+    route. Only fields referenced in the template are ever rendered, so
+    email/password_hash/role/google_sub stay off this page by construction.
+    """
+    user = db.session.get(User, user_id) or abort(404)
+    uploads = (
+        Resource.query.filter_by(uploader_id=user.id)
+        .order_by(Resource.created_at.desc())
+        .all()
+    )
 
-@main_bp.route("/api/courses")
-def api_courses():
-    university_id = request.args.get("university_id", type=int)
-    if not university_id:
-        return jsonify([])
-    courses = Course.query.filter_by(university_id=university_id).order_by(Course.name).all()
-    return jsonify([{"id": c.id, "label": c.name} for c in courses])
+    # "Uploader reputation": every rating across every one of their uploads,
+    # combined into one average -- computed in Python over the already-
+    # fetched `uploads` list (no extra query), same lazy-relationship style
+    # as Resource.average_rating in models.py.
+    all_ratings = [rating for upload in uploads for rating in upload.ratings]
+    reputation_avg = sum(r.stars for r in all_ratings) / len(all_ratings) if all_ratings else None
+    reputation_count = len(all_ratings)
 
-
-@main_bp.route("/api/semesters")
-def api_semesters():
-    course_id = request.args.get("course_id", type=int)
-    if not course_id:
-        return jsonify([])
-    semesters = Semester.query.filter_by(course_id=course_id).order_by(Semester.number).all()
-    return jsonify([{"id": s.id, "label": f"Semester {s.number}"} for s in semesters])
-
-
-@main_bp.route("/api/subjects")
-def api_subjects():
-    semester_id = request.args.get("semester_id", type=int)
-    if not semester_id:
-        return jsonify([])
-    subjects = Subject.query.filter_by(semester_id=semester_id).order_by(Subject.name).all()
-    return jsonify([{"id": s.id, "label": s.name} for s in subjects])
+    return render_template(
+        "main/user_profile.html",
+        profile_user=user,
+        uploads=uploads,
+        reputation_avg=reputation_avg,
+        reputation_count=reputation_count,
+    )

@@ -6,7 +6,6 @@
   <div class="resource-header">
     <h1>{{ resource.title }}
       {% if resource.is_verified %}<span class="badge badge-verified">Verified</span>{% endif %}
-      {% if resource.is_premium %}<span class="badge badge-premium">Premium</span>{% endif %}
     </h1>
     <p class="muted">
       {{ resource.subject.name }} &middot;
@@ -16,9 +15,37 @@
     </p>
     <p class="muted">
       {{ resource.resource_type|capitalize }} &middot;
-      Uploaded by {{ resource.uploader.name }} &middot;
+      Uploaded by <a href="{{ url_for('main.user_profile', user_id=resource.uploader.id) }}">{{ resource.uploader.name }}</a>
+      <span class="badge badge-{{ resource.uploader.user_type }}">{{ resource.uploader.user_type|capitalize }}</span>
+      &middot;
       {{ resource.download_count }} download{{ "s" if resource.download_count != 1 else "" }}
     </p>
+
+    <p class="rating-summary">
+      {% if resource.rating_count %}
+        <strong>{{ "%.1f"|format(resource.average_rating) }} &#9733;</strong>
+        ({{ resource.rating_count }} rating{{ "s" if resource.rating_count != 1 else "" }})
+      {% else %}
+        No ratings yet
+      {% endif %}
+    </p>
+
+    {% if rating_form %}
+      <form method="POST" action="{{ url_for('resources.rate', resource_id=resource.id) }}">
+        {{ rating_form.hidden_tag() }}
+        <div class="star-rating">
+          {% for subfield in rating_form.stars %}
+            {{ subfield(onchange="this.form.submit()") }}
+            {{ subfield.label }}
+          {% endfor %}
+        </div>
+        {% if user_rating %}<span class="muted">Your rating: {{ user_rating }} &#9733;</span>{% endif %}
+      </form>
+    {% elif current_user.is_authenticated and current_user.id == resource.uploader.id %}
+      <p class="muted">You can't rate your own upload.</p>
+    {% elif not current_user.is_authenticated %}
+      <p class="muted"><a href="{{ url_for('auth.login', next=request.path) }}">Log in</a> to rate this resource.</p>
+    {% endif %}
   </div>
 
   {% if resource.description %}
@@ -33,29 +60,60 @@
     </p>
   {% endif %}
 
-  {% if locked %}
-    <div class="premium-lock">
-      <p><strong>This resource is Premium.</strong></p>
-      <p class="muted">Payments aren't set up yet -- premium content isn't available for now.</p>
-    </div>
-  {% else %}
-    <div class="resource-actions">
-      <a class="btn btn-primary" href="{{ url_for('resources.download', resource_id=resource.id) }}">Download</a>
-      {% if resource.file_type == "pdf" %}
-        <a class="btn" href="{{ url_for('resources.preview', resource_id=resource.id) }}" target="_blank" rel="noopener">Preview</a>
-      {% endif %}
-    </div>
-
+  <div class="resource-actions">
+    <a class="btn btn-primary" href="{{ url_for('resources.download', resource_id=resource.id) }}">Download</a>
     {% if resource.file_type == "pdf" %}
-      <div class="pdf-preview">
-        <iframe src="{{ url_for('resources.preview', resource_id=resource.id) }}" title="PDF preview"></iframe>
-      </div>
-      <p class="muted pdf-preview-fallback">
-        Preview not showing correctly?
-        <a href="{{ url_for('resources.preview', resource_id=resource.id) }}" target="_blank" rel="noopener">Open it in a new tab</a>
-        instead.
-      </p>
+      <a class="btn" href="{{ url_for('resources.preview', resource_id=resource.id) }}" target="_blank" rel="noopener">Preview</a>
     {% endif %}
+  </div>
+
+  {% if resource.file_type == "pdf" %}
+    <div class="pdf-preview">
+      <iframe src="{{ url_for('resources.preview', resource_id=resource.id) }}" title="PDF preview"></iframe>
+    </div>
+    <p class="muted pdf-preview-fallback">
+      Preview not showing correctly?
+      <a href="{{ url_for('resources.preview', resource_id=resource.id) }}" target="_blank" rel="noopener">Open it in a new tab</a>
+      instead.
+    </p>
   {% endif %}
+
+  <section class="comments-section">
+    <h2>Comments ({{ comments|length }})</h2>
+
+    {% if comment_form %}
+      <form method="POST" action="{{ url_for('resources.add_comment', resource_id=resource.id) }}" class="comment-form">
+        {{ comment_form.hidden_tag() }}
+        {{ comment_form.body(class_="input", rows="3", placeholder="Add a comment...") }}
+        {% for error in comment_form.body.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        {{ comment_form.submit(class_="btn btn-primary") }}
+      </form>
+    {% else %}
+      <p class="muted"><a href="{{ url_for('auth.login', next=request.path) }}">Log in</a> to comment.</p>
+    {% endif %}
+
+    {% if comments %}
+      <ul class="card-list">
+        {% for comment in comments %}
+          <li class="card comment">
+            <p class="comment-meta">
+              <a href="{{ url_for('main.user_profile', user_id=comment.user.id) }}">{{ comment.user.name }}</a>
+              <span class="badge badge-{{ comment.user.user_type }}">{{ comment.user.user_type|capitalize }}</span>
+              <span class="muted">{{ comment.created_at.strftime('%b %d, %Y') }}</span>
+            </p>
+            <p class="comment-body">{{ comment.body }}</p>
+            {% if delete_comment_form and (current_user.id == comment.user_id or current_user.is_admin) %}
+              <form method="POST" action="{{ url_for('resources.delete_comment', resource_id=resource.id, comment_id=comment.id) }}">
+                {{ delete_comment_form.hidden_tag() }}
+                <button type="submit" class="btn">Delete</button>
+              </form>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">No comments yet.</p>
+    {% endif %}
+  </section>
 </article>
 {% endblock %}

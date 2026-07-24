@@ -21,7 +21,6 @@ class University(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
     code = db.Column(db.String(20), unique=True, nullable=False)
-    location = db.Column(db.String(150))
 
     courses = db.relationship("Course", backref="university", lazy=True, cascade="all, delete-orphan")
 
@@ -37,6 +36,13 @@ class Course(db.Model):
     full_name = db.Column(db.String(150))                    # e.g. "Bachelor of Computer Applications"
     total_semesters = db.Column(db.Integer, default=6)
     university_id = db.Column(db.Integer, db.ForeignKey("universities.id"), nullable=False)
+
+    # Case-insensitive so "BCA" and "bca" can't both get created by the
+    # upload form's lookup-or-create -- matches the app-level lower(name)
+    # check in resources/routes.py, rather than being a weaker DB backstop.
+    __table_args__ = (
+        db.Index("uq_course_university_name_ci", university_id, db.func.lower(name), unique=True),
+    )
 
     semesters = db.relationship("Semester", backref="course", lazy=True, cascade="all, delete-orphan")
 
@@ -82,6 +88,12 @@ class User(UserMixin, db.Model):
     # Nullable: accounts created via Google Sign-In have no password.
     password_hash = db.Column(db.String(255), nullable=True)
     role = db.Column(db.String(20), nullable=False, default="student")  # "student" | "admin"
+    # Separate from `role` on purpose: `role` gates admin permissions, `user_type`
+    # is just a public "who is this" label (Student/Faculty) shown as a badge.
+    # server_default (not just default=) because this landed on an existing table
+    # with existing rows -- the NOT NULL ALTER TABLE needs a DB-level default to
+    # backfill them, a Python-side default= only applies to new ORM inserts.
+    user_type = db.Column(db.String(20), nullable=False, server_default="student")  # "student" | "faculty"
     avatar_path = db.Column(db.String(500), nullable=True)  # relative to UPLOAD_FOLDER/avatars
 
     # How this account was originally created -- "email" or "google". Set
@@ -152,6 +164,11 @@ class Resource(db.Model):
     verified_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     verified_at = db.Column(db.DateTime, nullable=True)
 
+    # Informational only -- no view/download/preview enforcement reads this
+    # anymore (removed; all resources are freely accessible regardless of
+    # this flag). Kept rather than dropped: it's one boolean with real data
+    # already in production and no query cost to leaving it, and it's the
+    # natural hook if a real payment/subscription feature gets built later.
     is_premium = db.Column(db.Boolean, default=False, nullable=False)
 
     download_count = db.Column(db.Integer, default=0, nullable=False)
@@ -159,5 +176,59 @@ class Resource(db.Model):
 
     verified_by = db.relationship("User", foreign_keys=[verified_by_id])
 
+    @property
+    def average_rating(self):
+        """None if unrated. Computed in Python over the `ratings` backref
+        rather than a SQL aggregate -- same lazy-loaded-relationship style
+        already used everywhere else in this app (e.g. resource.subject.
+        semester.course.university chains), not a special case for ratings.
+        """
+        if not self.ratings:
+            return None
+        return sum(r.stars for r in self.ratings) / len(self.ratings)
+
+    @property
+    def rating_count(self):
+        return len(self.ratings)
+
     def __repr__(self):
         return f"<Resource {self.title}>"
+
+
+class Rating(db.Model):
+    __tablename__ = "ratings"
+    __table_args__ = (
+        # App-level upsert logic (query-then-update-or-insert, see
+        # resources/routes.py:rate) is the primary mechanism for "one rating
+        # per user per resource" -- this is the DB-level backstop.
+        db.UniqueConstraint("user_id", "resource_id", name="uq_rating_user_resource"),
+        db.CheckConstraint("stars >= 1 AND stars <= 5", name="ck_rating_stars_range"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    resource_id = db.Column(db.Integer, db.ForeignKey("resources.id"), nullable=False)
+    stars = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow)
+
+    user = db.relationship("User", backref="ratings")
+    resource = db.relationship("Resource", backref="ratings")
+
+    def __repr__(self):
+        return f"<Rating {self.stars}* by user {self.user_id} on resource {self.resource_id}>"
+
+
+class Comment(db.Model):
+    __tablename__ = "comments"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    resource_id = db.Column(db.Integer, db.ForeignKey("resources.id"), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow)
+
+    user = db.relationship("User", backref="comments")
+    resource = db.relationship("Resource", backref="comments")
+
+    def __repr__(self):
+        return f"<Comment {self.id} by user {self.user_id} on resource {self.resource_id}>"

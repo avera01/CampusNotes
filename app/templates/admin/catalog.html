@@ -4,11 +4,10 @@
 {% block content %}
 <h1>Manage catalog</h1>
 <p class="muted">
-  Add Universities, Courses, Semesters, and Subjects here. Each level needs its
-  parent to already exist first (a Course needs a University, a Semester needs
-  a Course, a Subject needs a Semester). Subjects can also get created
-  automatically when someone uploads a resource under a new subject name --
-  this page is for setting up the structure ahead of time.
+  University is the only level managed here -- a small, stable list. Course,
+  Semester, and Subject are all free text on the upload form: typing a new
+  name creates it automatically under the chosen University/Course/Semester,
+  so there's nothing to set up ahead of time for those.
 </p>
 
 <div class="card account-card">
@@ -19,7 +18,6 @@
         <li class="card resource-row">
           <div>
             <strong>{{ u.name }}</strong> <span class="muted">({{ u.code }})</span>
-            {% if u.location %}<div class="resource-meta">{{ u.location }}</div>{% endif %}
           </div>
         </li>
       {% endfor %}
@@ -38,130 +36,7 @@
       {{ university_form.code.label }}
       {{ university_form.code(class_="input", placeholder="e.g. NU") }}
     </div>
-    <div class="field">
-      {{ university_form.location.label }}
-      {{ university_form.location(class_="input") }}
-    </div>
     {{ university_form.submit(class_="btn btn-primary") }}
   </form>
-</div>
-
-<div class="card account-card">
-  <h2>Courses ({{ courses|length }})</h2>
-  {% if courses %}
-    <ul class="card-list">
-      {% for c in courses %}
-        <li class="card resource-row">
-          <div>
-            <strong>{{ c.name }}</strong> <span class="muted">{{ c.full_name or "" }}</span>
-            <div class="resource-meta">{{ c.university.name }} &middot; {{ c.total_semesters }} semesters</div>
-          </div>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p class="muted">None yet.</p>
-  {% endif %}
-
-  {% if universities %}
-    <form method="POST" action="{{ url_for('admin.create_course') }}" class="catalog-form">
-      {{ course_form.hidden_tag() }}
-      <div class="field">
-        {{ course_form.university_id.label }}
-        {{ course_form.university_id(class_="input") }}
-      </div>
-      <div class="field">
-        {{ course_form.name.label }}
-        {{ course_form.name(class_="input") }}
-      </div>
-      <div class="field">
-        {{ course_form.full_name.label }}
-        {{ course_form.full_name(class_="input") }}
-      </div>
-      <div class="field">
-        {{ course_form.total_semesters.label }}
-        {{ course_form.total_semesters(class_="input") }}
-      </div>
-      {{ course_form.submit(class_="btn btn-primary") }}
-    </form>
-  {% else %}
-    <p class="muted">Add a University first.</p>
-  {% endif %}
-</div>
-
-<div class="card account-card">
-  <h2>Semesters ({{ semesters|length }})</h2>
-  {% if semesters %}
-    <ul class="card-list">
-      {% for s in semesters %}
-        <li class="card resource-row">
-          <div>
-            <strong>Semester {{ s.number }}</strong>
-            <div class="resource-meta">{{ s.course.name }} &middot; {{ s.course.university.name }}</div>
-          </div>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p class="muted">None yet.</p>
-  {% endif %}
-
-  {% if courses %}
-    <form method="POST" action="{{ url_for('admin.create_semester') }}" class="catalog-form">
-      {{ semester_form.hidden_tag() }}
-      <div class="field">
-        {{ semester_form.course_id.label }}
-        {{ semester_form.course_id(class_="input") }}
-      </div>
-      <div class="field">
-        {{ semester_form.number.label }}
-        {{ semester_form.number(class_="input") }}
-      </div>
-      {{ semester_form.submit(class_="btn btn-primary") }}
-    </form>
-  {% else %}
-    <p class="muted">Add a Course first.</p>
-  {% endif %}
-</div>
-
-<div class="card account-card">
-  <h2>Subjects ({{ subjects|length }})</h2>
-  {% if subjects %}
-    <ul class="card-list">
-      {% for subj in subjects %}
-        <li class="card resource-row">
-          <div>
-            <strong>{{ subj.name }}</strong> {% if subj.code %}<span class="muted">({{ subj.code }})</span>{% endif %}
-            <div class="resource-meta">
-              {{ subj.semester.course.name }} Sem {{ subj.semester.number }} &middot; {{ subj.semester.course.university.name }}
-            </div>
-          </div>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p class="muted">None yet.</p>
-  {% endif %}
-
-  {% if semesters %}
-    <form method="POST" action="{{ url_for('admin.create_subject') }}" class="catalog-form">
-      {{ subject_form.hidden_tag() }}
-      <div class="field">
-        {{ subject_form.semester_id.label }}
-        {{ subject_form.semester_id(class_="input") }}
-      </div>
-      <div class="field">
-        {{ subject_form.name.label }}
-        {{ subject_form.name(class_="input") }}
-      </div>
-      <div class="field">
-        {{ subject_form.code.label }}
-        {{ subject_form.code(class_="input") }}
-      </div>
-      {{ subject_form.submit(class_="btn btn-primary") }}
-    </form>
-  {% else %}
-    <p class="muted">Add a Semester first.</p>
-  {% endif %}
 </div>
 {% endblock %}

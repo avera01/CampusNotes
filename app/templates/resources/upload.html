@@ -32,26 +32,21 @@
       <legend>Where does this belong?</legend>
 
       <div class="field">
-        <label for="upload-university">University</label>
-        <select id="upload-university" class="input">
-          <option value="">-- select university --</option>
-          {% for uni in universities %}
-            <option value="{{ uni.id }}">{{ uni.name }}</option>
-          {% endfor %}
-        </select>
+        {{ form.university_id.label }}
+        {{ form.university_id(class_="input") }}
+        {% for error in form.university_id.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="field">
-        <label for="upload-course">Course</label>
-        <select id="upload-course" class="input" disabled>
-          <option value="">-- select university first --</option>
-        </select>
+        {{ form.course_name.label }}
+        {{ form.course_name(class_="input", placeholder="e.g. BCA") }}
+        {% for error in form.course_name.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="field">
-        {{ form.semester_id.label }}
-        {{ form.semester_id(class_="input", id="upload-semester", disabled=true) }}
-        {% for error in form.semester_id.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        {{ form.semester_number.label }}
+        {{ form.semester_number(class_="input", id="upload-semester", placeholder="e.g. 3") }}
+        {% for error in form.semester_number.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="field">
@@ -68,30 +63,7 @@
       {% for error in form.file.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
     </div>
 
-    <div class="field field-checkbox">
-      {{ form.is_premium() }}
-      {{ form.is_premium.label }}
-    </div>
-
     {{ form.submit(class_="btn btn-primary") }}
   </form>
 </div>
-
-<script src="{{ versioned_static('js/cascade.js') }}"></script>
-<script>
-  initCascade([
-    { select: document.getElementById("upload-university") },
-    { select: document.getElementById("upload-course"), endpoint: "{{ url_for('main.api_courses') }}", param: "university_id", placeholder: "-- select course --" },
-    { select: document.getElementById("upload-semester"), endpoint: "{{ url_for('main.api_semesters') }}", param: "course_id", placeholder: "-- select semester --" }
-  ]);
-
-  // Semester is the last real cascade field -- keep its disabled state in
-  // sync with whether it has usable options so it actually submits.
-  document.getElementById("upload-semester").addEventListener("change", function () {
-    this.disabled = !this.value;
-  });
-  document.querySelector("form").addEventListener("submit", function () {
-    document.getElementById("upload-semester").disabled = false;
-  });
-</script>
 {% endblock %}

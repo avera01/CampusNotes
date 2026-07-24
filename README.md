@@ -27,7 +27,7 @@ campusnotes/
 │   ├── resources/           # upload, detail, download, PDF preview, storage.py
 │   ├── admin/                # verify/unverify queue
 │   ├── templates/
-│   ├── static/               # css/style.css, js/cascade.js
+│   ├── static/               # css/style.css, js/
 │   └── uploads/              # uploaded files (gitignored)
 ├── migrations/                # Flask-Migrate versions (created by `flask db init`)
 ├── seed.py                    # sample data: Nagaland University, 10 courses, subjects, test users

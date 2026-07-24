@@ -382,6 +382,43 @@ textarea.input { resize: vertical; }
 }
 .badge-verified { background: #dcfce7; color: var(--color-success); }
 .badge-premium { background: #fef3c7; color: #b45309; }
+.badge-student { background: #e0e7ff; color: #4338ca; }
+.badge-faculty { background: #fce7f3; color: #be185d; }
+
+.rating-summary { color: var(--color-muted); }
+.rating-summary strong { color: var(--color-text); }
+
+/* Classic CSS-only star picker: radios in reverse DOM order + sibling
+   selectors give hover/checked fill without any JS. Each radio's onchange
+   submits the form immediately (same pattern as the Home/Search filter
+   selects), so clicking a star is a one-click rating submission. */
+.star-rating {
+  display: inline-flex;
+  flex-direction: row-reverse;
+  font-size: 1.6rem;
+}
+.star-rating input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.star-rating label {
+  cursor: pointer;
+  color: var(--color-border);
+  padding: 0 2px;
+}
+.star-rating input:checked ~ label,
+.star-rating label:hover,
+.star-rating label:hover ~ label {
+  color: #f59e0b;
+}
+
+.comments-section { margin-top: 28px; }
+.comment-form { margin: 12px 0 20px; }
+.comment-form textarea { min-height: 70px; }
+.comment-meta { margin: 0 0 4px; font-size: 0.9rem; }
+.comment-body { margin: 0 0 8px; white-space: pre-wrap; }
+.comment form { margin: 0; }
 
 .tags { margin: 8px 0; }
 .tag {
@@ -396,14 +433,6 @@ textarea.input { resize: vertical; }
 
 .resource-actions { display: flex; gap: 10px; margin: 16px 0; }
 .btn:not(.btn-primary) { background: var(--color-surface); border: 1px solid var(--color-border); color: var(--color-text); }
-
-.premium-lock {
-  background: #fffbeb;
-  border: 1px solid #fde68a;
-  border-radius: var(--radius);
-  padding: 16px;
-  margin: 16px 0;
-}
 
 .pdf-preview { margin-top: 16px; }
 .pdf-preview iframe {
